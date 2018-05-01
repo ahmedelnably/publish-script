@@ -2,8 +2,8 @@
 
 $packageName= 'azure-functions-core-tools'
 $toolsDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
-$url        = 'https://functionscdn.azureedge.net/public/1.0.11/Azure.Functions.Cli.zip'
-$checksum   = '32C20C58CEDC58540C04130EBC2B4341221322A8C483A0FEE84266E01F760014906440EC6DA5F209198AC74C272842E8B7BEFBE32A940CD5D21B2C62A3158892'
+$url        = 'https://functionscdn.azureedge.net/public/1.0.12/Azure.Functions.Cli.zip'
+$checksum   = '451C272C4538893EB659387A1DF587BD7D4F1DB787E788C9C1EB3609E9F10F6F8409141D8AA536E438D9FF640CBE2BBAD4E4745803DF267220F12423E77D4681'
 
 $packageArgs = @{
   packageName   = $packageName
