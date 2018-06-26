@@ -1,1 +1,5 @@
 *.nupkg
+*.zip
+.vscode
+
+output/

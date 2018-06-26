@@ -1,0 +1,5 @@
+azure-functions-core-tools ({VERSION}) unstable; urgency=medium
+
+  * https://github.com/Azure/azure-functions-core-tools/releases/tag/{VERSION}
+
+ -- ShunXian Cai <shucai@microsoft.com>  {DATETIME} -0800

@@ -1,0 +1,11 @@
+Maintainer: ShunXian Cai <shucai@microsoft.com>
+Version: {VERSION}-1
+Section: devel
+Priority: optional
+Homepage: https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local#run-azure-functions-core-tools
+Vcs-Git: https://github.com/Azure/azure-functions-cli.git
+Package: azure-functions-core-tools
+Architecture: amd64
+Depends: dotnet-runtime-deps-2.1 (>= 2.1.1)
+Description: Azure Function Cli 2.0
+ The Azure Functions Core Tools provide a local development experience for creating, developing, testing, running, and debugging Azure Functions.
