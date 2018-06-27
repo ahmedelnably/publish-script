@@ -1,4 +1,4 @@
-azure-functions-core-tools ({VERSION}) unstable; urgency=medium
+{PACKAGENAME} ({DEBIANVERSION}) unstable; urgency=medium
 
   * https://github.com/Azure/azure-functions-core-tools/releases/tag/{VERSION}
 

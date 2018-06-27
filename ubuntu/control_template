@@ -1,10 +1,10 @@
 Maintainer: ShunXian Cai <shucai@microsoft.com>
-Version: {VERSION}-1
+Version: {DEBIANVERSION}
 Section: devel
 Priority: optional
 Homepage: https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local#run-azure-functions-core-tools
 Vcs-Git: https://github.com/Azure/azure-functions-cli.git
-Package: azure-functions-core-tools
+Package: {PACKAGENAME}
 Architecture: amd64
 Depends: dotnet-runtime-deps-2.1 (>= 2.1.1)
 Description: Azure Function Cli 2.0
