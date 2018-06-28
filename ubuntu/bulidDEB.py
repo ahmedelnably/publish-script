@@ -2,6 +2,7 @@
 
 # takes in a zip url
 # output a deb package
+# not cross platform, depends on gzip, dpkg-deb, strip and md5sum
 
 import sys
 import os
@@ -22,7 +23,7 @@ url = f'https://functionscdn.azureedge.net/public/{version}/{fileName}'
 debianVersion = f'{version.replace("-beta", "~beta")}-1'
 
 # download the zip
-# output to local folder, using name fileName
+# output to local folder
 if not os.path.exists(fileName):
     print(f"downloading from {url}...")
     wget.download(url)
@@ -68,14 +69,14 @@ shutil.copyfile("../../copyright", f"{document}/copyright")
 # write changelog
 with open("../../changelog_template") as f:
     stringData = f.read()
-# changelog, dateTime: Tue, 06 April 2018 16:32:31
+# datetime example: Tue, 06 April 2018 16:32:31
 t = datetime.datetime.utcnow().strftime("%a, %d %b %Y %X")
 formattedString = stringData.format(DEBIANVERSION=debianVersion,DATETIME=t,VERSION=version, PACKAGENAME=packageName)
 with open(f"{document}/changelog.Debian","w") as f:
     print(f"writing changelog with date utc: {t}")
     f.write(formattedString)
-# by default gzip compress file in place
-subprocess.run(f"gzip -9 -n {document}/changelog.Debian", shell=True)
+# by default gzip compress file 'in place
+subprocess.run(["gzip", "-9", "-n", f"{document}/changelog.Debian"])
 
 debian = "DEBIAN"
 os.makedirs(debian)
@@ -93,10 +94,13 @@ with open("DEBIAN/control","w") as f:
 
 # before publish
 print(f"change permission of files in {os.getcwd()}")
-# file permission to 644
-subprocess.run("find * -type f | xargs chmod 644", shell=True)
-# folder permission to 755
-subprocess.run("find * -type d | xargs chmod 755", shell=True)
+for r,ds,fs in os.walk(os.getcwd()):
+    for d in ds:
+        # folder permission to 755
+        os.chmod(os.path.join(r,d), 0o755)
+    for f in fs:
+        # file permission to 644
+        os.chmod(os.path.join(r,f), 0o644)
 print(f"change bin/func permission to 755")
 # octal
 os.chmod("usr/bin/func", 0o755)
@@ -104,6 +108,6 @@ os.chmod("usr/bin/func", 0o755)
 # go to output
 os.chdir("../")
 print("trying to produce deb file...")
-subprocess.run(f"fakeroot dpkg-deb --build {packageName}_{debianVersion}", shell=True)
+subprocess.run(["fakeroot","dpkg-deb", "--build", f"{packageName}_{debianVersion}"])
 
 # TODO test func executables
