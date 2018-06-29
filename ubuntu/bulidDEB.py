@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#! /usr/bin/env python3.6
 
 # takes in a zip url
 # output a deb package
@@ -11,6 +11,7 @@ import zipfile
 import shutil
 import subprocess
 import datetime
+import runTest
 
 # input example: 2.0.1-beta.25
 version = sys.argv[1]
@@ -107,7 +108,9 @@ os.chmod("usr/bin/func", 0o755)
 
 # go to output
 os.chdir("../")
+
+# test basic functionality
+assert(runTest.runExecutable(f"{packageName}_{debianVersion}/usr/bin/func", version))
+
 print("trying to produce deb file...")
 subprocess.run(["fakeroot","dpkg-deb", "--build", f"{packageName}_{debianVersion}"])
-
-# TODO test func executables
