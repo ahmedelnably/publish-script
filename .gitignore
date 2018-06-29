@@ -2,5 +2,7 @@
 *.zip
 .vscode
 
-output/
+build/
+artifact/
+test/
 __pycache__/
