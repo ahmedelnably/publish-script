@@ -5,6 +5,7 @@ import shared.runTest as test
 import os
 import shutil
 
+
 def main(*args):
     # input example: 2.0.1-beta.25
     version = args[1]
@@ -23,6 +24,12 @@ def main(*args):
     else:
         print(f"does not support platform {platformSystem} yet...")
         return
+    
+    # template should contain following steps
+    # 1. build package
+    # 2. install
+    # 3. test 
+    # 4. remove
 
     # at root
     buildFolderName = "build"
@@ -33,7 +40,7 @@ def main(*args):
         shutil.rmtree(buildFolderName)
     os.mkdir(buildFolderName)
 
-    binaryPath = dist.preparePackage(version,buildFolderName)
+    binaryPath = dist.preparePackage(version, buildFolderName)
 
     assert(test.runExecutable(binaryPath, version))
 
@@ -42,6 +49,7 @@ def main(*args):
         os.mkdir(artifactFolderName)
     # from buildFolder to artifactFolder
     dist.publishArtifact(buildFolderName, artifactFolderName, version)
-    
+
+
 if __name__ == "__main__":
     main(*sys.argv)
