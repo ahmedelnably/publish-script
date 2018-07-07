@@ -1,0 +1,25 @@
+$ErrorActionPreference = 'Stop';
+
+$packageName= '$PACKAGENAME'
+$toolsDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$url        = '$ZIPURL'
+$checksum   = '$CHECKSUM'
+
+$packageArgs = @{
+  packageName   = $packageName
+  unzipLocation = $toolsDir
+  url           = $url
+  checksum      = $checksum
+  checksumType  = 'SHA512'
+}
+
+Install-ChocolateyZipPackage @packageArgs
+
+# only symlink for func.exe
+$files = get-childitem $toolsDir -include *.exe -recurse
+foreach ($file in $files) {
+  if (!$file.Name.Equals("func.exe")) {
+    #generate an ignore file
+    New-Item "$file.ignore" -type file -force | Out-Null
+  }
+}

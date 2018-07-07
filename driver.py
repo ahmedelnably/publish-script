@@ -5,9 +5,18 @@ import shared.runTest as test
 import os
 import shutil
 
+artifactFolderName = "artifact"
+buildFolderName = "build"
+testFolderName = "test"
+
+# 1. build package
+# { 2. clean install
+#   3. test executable
+#   4. uninstall }  => all part of testing
+
 
 def main(*args):
-    # input example: 2.0.1-beta.25
+    # assume follow semantic versioning 2.0.0
     version = args[1]
     platformSystem = platform.system()
     if platformSystem == "Linux":
@@ -19,37 +28,42 @@ def main(*args):
             print(f"does not support distribution {d} yet...")
             return
     elif platformSystem == "Windows":
-        # TODO import chocolatey.buildNUPKG as dist
-        pass
+        import chocolatey.buildNUPKG as dist
+        print("detect Windows, start working on nupkg pacakge...")
     else:
         print(f"does not support platform {platformSystem} yet...")
         return
-    
-    # template should contain following steps
-    # 1. build package
-    # 2. install
-    # 3. test 
-    # 4. remove
 
     # at root
-    buildFolderName = "build"
-    # create folder structure in "output/"
+    # TODO write helper function instead of repetition
     if os.path.exists(buildFolderName):
         # clear stale data
-        print(f"trying to clear build/ directory...")
+        print(f"trying to clear {buildFolderName}/ directory...")
         shutil.rmtree(buildFolderName)
     os.mkdir(buildFolderName)
 
-    binaryPath = dist.preparePackage(version, buildFolderName)
-
-    assert(test.runExecutable(binaryPath, version))
-
-    artifactFolderName = "artifact"
     if not os.path.exists(artifactFolderName):
         os.mkdir(artifactFolderName)
-    # from buildFolder to artifactFolder
-    dist.publishArtifact(buildFolderName, artifactFolderName, version)
+
+    if os.path.exists(testFolderName):
+        print(f"trying to clear {testFolderName}/ directory...")
+        shutil.rmtree(testFolderName)
+    os.makedirs(testFolderName)
+
+    # 1. build package
+    dist.preparePackage(buildFolderName, artifactFolderName, version)
+
+    def verifyPackage():
+        # 2. clean install
+        # TODO usually require sudo or administrator privilege
+        dist.installPackage(artifactFolderName, version)
+        # 3. test executable
+        assert(test.runExecutable(testFolderName, version))
+        # 4. uninstall
+        dist.uninstallPackage(artifactFolderName, version)
+    verifyPackage()
 
 
 if __name__ == "__main__":
+    # input example: 2.0.1-beta.25
     main(*sys.argv)

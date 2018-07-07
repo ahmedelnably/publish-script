@@ -11,16 +11,21 @@ import zipfile
 import shutil
 import subprocess
 import datetime
+from shared.constants import PACKAGENAME
 from shared.helper import restoreDirectory
 
 def returnDebVersion(version):
     # version used in url is provided from user input
     # version used for packaging .deb package needs a slight modification
     # for beta, change to tilde, so it will be placed before rtm versions in apt
-    return f'{version.replace("-beta", "~beta")}-1'
-
-
-packageName = "azure-functions-core-tools"
+    # https://unix.stackexchange.com/questions/230911/what-is-the-meaning-of-the-tilde-in-some-debian-openjdk-package-version-string/230921
+    strlist = version.split('-')
+    if len(strlist) == 1:
+        return strlist[0]+"-1"
+    elif len(strlist) == 2:
+        return f"{strlist[0]}~{strlist[1]}-1"
+    else:
+        raise NotImplementedError
 
 @restoreDirectory
 def preparePackage(version, outFolder):
@@ -28,9 +33,6 @@ def preparePackage(version, outFolder):
     fileName = f"Azure.Functions.Cli.linux-x64.{version}.zip"
     url = f'https://functionscdn.azureedge.net/public/{version}/{fileName}'
 
-    # version used in url is provided from user input
-    # version used for packaging .deb package needs a slight modification
-    # for beta, change to tilde, so it will be placed before rtm versions in apt
     debianVersion = returnDebVersion(version)
 
     # download the zip
@@ -40,10 +42,10 @@ def preparePackage(version, outFolder):
         wget.download(url)
 
     # all directories path are relative
-    root = os.path.join(outFolder, f"{packageName}_{debianVersion}")
+    root = os.path.join(outFolder, f"{PACKAGENAME}_{debianVersion}")
     usr = os.path.join(root, "usr")
     usrlib = os.path.join(usr, "lib")
-    usrlibFunc = os.path.join(usrlib, packageName)
+    usrlibFunc = os.path.join(usrlib, PACKAGENAME)
     os.makedirs(usrlibFunc)
     # unzip here
     with zipfile.ZipFile(fileName) as f:
@@ -56,7 +58,7 @@ def preparePackage(version, outFolder):
     # cd into usr/bin, create relative symlink
     os.chdir(usrbin)
     print("trying to create symlink for func...")
-    os.symlink(f"../lib/{packageName}/func", "func")
+    os.symlink(f"../lib/{PACKAGENAME}/func", "func")
     # executable to be returned
     exeFullPath = os.path.abspath("func")
 
@@ -66,7 +68,7 @@ def preparePackage(version, outFolder):
     subprocess.run(
         "find -name *.so | xargs strip --strip-unneeded", shell=True)
 
-    document = os.path.join("usr", "share", "doc", packageName)
+    document = os.path.join("usr", "share", "doc", PACKAGENAME)
     os.makedirs(document)
     # write copywrite
     print("include MIT copyright")
@@ -79,7 +81,7 @@ def preparePackage(version, outFolder):
     # datetime example: Tue, 06 April 2018 16:32:31
     t = datetime.datetime.utcnow().strftime("%a, %d %b %Y %X")
     formattedString = stringData.format(
-        DEBIANVERSION=debianVersion, DATETIME=t, VERSION=version, PACKAGENAME=packageName)
+        DEBIANVERSION=debianVersion, DATETIME=t, VERSION=version, PACKAGENAME=PACKAGENAME)
     with open(os.path.join(document, "changelog.Debian"), "w") as f:
         print(f"writing changelog with date utc: {t}")
         f.write(formattedString)
@@ -98,7 +100,7 @@ def preparePackage(version, outFolder):
     with open(os.path.join(scriptDir, "control_template")) as f:
         stringData = f.read()
     formattedString = stringData.format(
-        DEBIANVERSION=debianVersion, PACKAGENAME=packageName)
+        DEBIANVERSION=debianVersion, PACKAGENAME=PACKAGENAME)
     with open(os.path.join(debian, "control"), "w") as f:
         print("trying to write control file...")
         f.write(formattedString)
@@ -120,6 +122,6 @@ def preparePackage(version, outFolder):
 
 def publishArtifact(src, dest, version):
     print("trying to produce deb file...")
-    name = f"{packageName}_{returnDebVersion(version)}"
+    name = f"{PACKAGENAME}_{returnDebVersion(version)}"
     subprocess.run(["fakeroot", "dpkg-deb", "--build",
                     os.path.join(src, name), os.path.join(dest, name+".deb")])
