@@ -2,7 +2,7 @@
 
 # takes in a zip url
 # output a deb package
-# not cross platform, depends on gzip, dpkg-deb, strip and md5sum
+# depends on gzip, dpkg-deb, strip and md5sum
 
 import sys
 import os
@@ -11,6 +11,7 @@ import zipfile
 import shutil
 import subprocess
 import datetime
+from string import Template
 from shared.constants import PACKAGENAME
 from shared.helper import restoreDirectory
 
@@ -28,7 +29,7 @@ def returnDebVersion(version):
         raise NotImplementedError
 
 @restoreDirectory
-def preparePackage(version, outFolder):
+def preparePackage(buildFolder, artiFactFolder, version):
     # for ubuntu, its x64 version only
     fileName = f"Azure.Functions.Cli.linux-x64.{version}.zip"
     url = f'https://functionscdn.azureedge.net/public/{version}/{fileName}'
@@ -42,7 +43,8 @@ def preparePackage(version, outFolder):
         wget.download(url)
 
     # all directories path are relative
-    root = os.path.join(outFolder, f"{PACKAGENAME}_{debianVersion}")
+    packageFolder = f"{PACKAGENAME}_{debianVersion}"
+    root = os.path.join(buildFolder, packageFolder)
     usr = os.path.join(root, "usr")
     usrlib = os.path.join(usr, "lib")
     usrlibFunc = os.path.join(usrlib, PACKAGENAME)
@@ -78,13 +80,12 @@ def preparePackage(version, outFolder):
     # write changelog
     with open(os.path.join(scriptDir, "changelog_template")) as f:
         stringData = f.read()  # read until EOF
+    t = Template(stringData)
     # datetime example: Tue, 06 April 2018 16:32:31
-    t = datetime.datetime.utcnow().strftime("%a, %d %b %Y %X")
-    formattedString = stringData.format(
-        DEBIANVERSION=debianVersion, DATETIME=t, VERSION=version, PACKAGENAME=PACKAGENAME)
+    time = datetime.datetime.utcnow().strftime("%a, %d %b %Y %X")
     with open(os.path.join(document, "changelog.Debian"), "w") as f:
         print(f"writing changelog with date utc: {t}")
-        f.write(formattedString)
+        f.write(t.safe_substitute(DEBIANVERSION=debianVersion, DATETIME=time, VERSION=version, PACKAGENAME=PACKAGENAME))
     # by default gzip compress file 'in place
     subprocess.run(
         ["gzip", "-9", "-n", os.path.join(document, "changelog.Debian")])
@@ -99,11 +100,10 @@ def preparePackage(version, outFolder):
     # produce the control file from template
     with open(os.path.join(scriptDir, "control_template")) as f:
         stringData = f.read()
-    formattedString = stringData.format(
-        DEBIANVERSION=debianVersion, PACKAGENAME=PACKAGENAME)
+    t = Template(stringData)
     with open(os.path.join(debian, "control"), "w") as f:
         print("trying to write control file...")
-        f.write(formattedString)
+        f.write(t.safe_substitute(DEBIANVERSION=debianVersion, PACKAGENAME=PACKAGENAME))
 
     # before publish
     print(f"change permission of files in {os.getcwd()}")
@@ -117,11 +117,8 @@ def preparePackage(version, outFolder):
     print(f"change bin/func permission to 755")
     # octal
     os.chmod(exeFullPath, 0o755)
-    return exeFullPath
 
-
-def publishArtifact(src, dest, version):
+    os.chdir("../..") 
     print("trying to produce deb file...")
-    name = f"{PACKAGENAME}_{returnDebVersion(version)}"
     subprocess.run(["fakeroot", "dpkg-deb", "--build",
-                    os.path.join(src, name), os.path.join(dest, name+".deb")])
+                   os.path.join(buildFolder, packageFolder), os.path.join(artiFactFolder, packageFolder+".deb")])

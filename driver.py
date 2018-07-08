@@ -61,7 +61,7 @@ def main(*args):
         assert(test.runExecutable(testFolderName, version))
         # 4. uninstall
         dist.uninstallPackage(artifactFolderName, version)
-    verifyPackage()
+    # verifyPackage()
 
 
 if __name__ == "__main__":
