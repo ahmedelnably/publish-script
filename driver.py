@@ -4,10 +4,7 @@ import sys
 import shared.runTest as test
 import os
 import shutil
-
-artifactFolderName = "artifact"
-buildFolderName = "build"
-testFolderName = "test"
+from shared import constants
 
 # 1. build package
 # { 2. clean install
@@ -17,7 +14,7 @@ testFolderName = "test"
 
 def main(*args):
     # assume follow semantic versioning 2.0.0
-    version = args[1]
+    constants.VERSION = args[1]
     platformSystem = platform.system()
     if platformSystem == "Linux":
         d, _, __ = platform.linux_distribution()
@@ -35,34 +32,31 @@ def main(*args):
         return
 
     # at root
-    # TODO write helper function instead of repetition
-    if os.path.exists(buildFolderName):
-        # clear stale data
-        print(f"trying to clear {buildFolderName}/ directory...")
-        shutil.rmtree(buildFolderName)
-    os.mkdir(buildFolderName)
-
-    if not os.path.exists(artifactFolderName):
-        os.mkdir(artifactFolderName)
-
-    if os.path.exists(testFolderName):
-        print(f"trying to clear {testFolderName}/ directory...")
-        shutil.rmtree(testFolderName)
-    os.makedirs(testFolderName)
+    initWorkingDir(constants.BUILDFOLDER, True)
+    initWorkingDir(constants.ARTIFACTFOLDER)
 
     # 1. build package
-    dist.preparePackage(buildFolderName, artifactFolderName, version)
+    dist.preparePackage()
 
     def verifyPackage():
+        initWorkingDir(constants.TESTFOLDER, True)
         # 2. clean install
         # TODO usually require sudo or administrator privilege
-        dist.installPackage(artifactFolderName, version)
+        dist.installPackage()
         # 3. test executable
-        assert(test.runExecutable(testFolderName, version))
+        assert(test.runExecutable())
         # 4. uninstall
-        dist.uninstallPackage(artifactFolderName, version)
+        dist.uninstallPackage()
     # verifyPackage()
 
+
+def initWorkingDir(dirName, clean = False):
+    if clean:
+        if os.path.exists(dirName):
+            print(f"trying to clear {dirName}/ directory ...")
+            shutil.rmtree(dirName)
+    print(f"trying to create {dirName}/ directory")
+    os.makedirs(dirName, exist_ok=True)
 
 if __name__ == "__main__":
     # input example: 2.0.1-beta.25

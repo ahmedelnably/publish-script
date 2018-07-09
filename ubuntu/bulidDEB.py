@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import datetime
 from string import Template
-from shared.constants import PACKAGENAME
+from shared import constants
 from shared.helper import restoreDirectory
 
 def returnDebVersion(version):
@@ -29,7 +29,7 @@ def returnDebVersion(version):
         raise NotImplementedError
 
 @restoreDirectory
-def preparePackage(buildFolder, artiFactFolder, version):
+def preparePackage(version = constants.VERSION):
     # for ubuntu, its x64 version only
     fileName = f"Azure.Functions.Cli.linux-x64.{version}.zip"
     url = f'https://functionscdn.azureedge.net/public/{version}/{fileName}'
@@ -43,11 +43,11 @@ def preparePackage(buildFolder, artiFactFolder, version):
         wget.download(url)
 
     # all directories path are relative
-    packageFolder = f"{PACKAGENAME}_{debianVersion}"
-    root = os.path.join(buildFolder, packageFolder)
+    packageFolder = f"{constants.PACKAGENAME}_{debianVersion}"
+    root = os.path.join(constants.BUILDFOLDER, packageFolder)
     usr = os.path.join(root, "usr")
     usrlib = os.path.join(usr, "lib")
-    usrlibFunc = os.path.join(usrlib, PACKAGENAME)
+    usrlibFunc = os.path.join(usrlib, constants.PACKAGENAME)
     os.makedirs(usrlibFunc)
     # unzip here
     with zipfile.ZipFile(fileName) as f:
@@ -60,7 +60,7 @@ def preparePackage(buildFolder, artiFactFolder, version):
     # cd into usr/bin, create relative symlink
     os.chdir(usrbin)
     print("trying to create symlink for func...")
-    os.symlink(f"../lib/{PACKAGENAME}/func", "func")
+    os.symlink(f"../lib/{constants.PACKAGENAME}/func", "func")
     # executable to be returned
     exeFullPath = os.path.abspath("func")
 
@@ -70,7 +70,7 @@ def preparePackage(buildFolder, artiFactFolder, version):
     subprocess.run(
         "find -name *.so | xargs strip --strip-unneeded", shell=True)
 
-    document = os.path.join("usr", "share", "doc", PACKAGENAME)
+    document = os.path.join("usr", "share", "doc", constants.PACKAGENAME)
     os.makedirs(document)
     # write copywrite
     print("include MIT copyright")
@@ -85,7 +85,7 @@ def preparePackage(buildFolder, artiFactFolder, version):
     time = datetime.datetime.utcnow().strftime("%a, %d %b %Y %X")
     with open(os.path.join(document, "changelog.Debian"), "w") as f:
         print(f"writing changelog with date utc: {t}")
-        f.write(t.safe_substitute(DEBIANVERSION=debianVersion, DATETIME=time, VERSION=version, PACKAGENAME=PACKAGENAME))
+        f.write(t.safe_substitute(DEBIANVERSION=debianVersion, DATETIME=time, VERSION=version, PACKAGENAME=constants.PACKAGENAME))
     # by default gzip compress file 'in place
     subprocess.run(
         ["gzip", "-9", "-n", os.path.join(document, "changelog.Debian")])
@@ -103,7 +103,7 @@ def preparePackage(buildFolder, artiFactFolder, version):
     t = Template(stringData)
     with open(os.path.join(debian, "control"), "w") as f:
         print("trying to write control file...")
-        f.write(t.safe_substitute(DEBIANVERSION=debianVersion, PACKAGENAME=PACKAGENAME))
+        f.write(t.safe_substitute(DEBIANVERSION=debianVersion, PACKAGENAME=constants.PACKAGENAME))
 
     # before publish
     print(f"change permission of files in {os.getcwd()}")
@@ -121,4 +121,4 @@ def preparePackage(buildFolder, artiFactFolder, version):
     os.chdir("../..") 
     print("trying to produce deb file...")
     subprocess.run(["fakeroot", "dpkg-deb", "--build",
-                   os.path.join(buildFolder, packageFolder), os.path.join(artiFactFolder, packageFolder+".deb")])
+                   os.path.join(constants.BUILDFOLDER, packageFolder), os.path.join(constants.ARTIFACTFOLDER, packageFolder+".deb")])

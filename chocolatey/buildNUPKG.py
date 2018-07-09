@@ -4,7 +4,7 @@ import wget
 import sys
 import subprocess
 from string import Template
-from shared.constants import PACKAGENAME
+from shared import constants
 from shared.helper import printToConsole
 
 def getChocoVersion(version):
@@ -21,9 +21,8 @@ def getChocoVersion(version):
         raise NotImplementedError
 
 # for windows, there's v1 and v2 versions
-# TODO make the version constant once the driver is called
 # assume buildFolder is clean
-def preparePackage(buildFolder, artifactFolder, version):
+def preparePackage(version = constants.VERSION):
     # for windows, its x86 version only
     fileName = f"Azure.Functions.Cli.win-x86.{version}.zip"
     url = f'https://functionscdn.azureedge.net/public/{version}/{fileName}'
@@ -44,7 +43,7 @@ def preparePackage(buildFolder, artifactFolder, version):
     # checksum output with carriage return
     sha512 = raw.strip()
     
-    tools = os.path.join(buildFolder, "tools")
+    tools = os.path.join(constants.BUILDFOLDER, "tools")
     os.makedirs(tools)
 
     # write install powershell script
@@ -55,37 +54,37 @@ def preparePackage(buildFolder, artifactFolder, version):
     t = Template(stringData)
     with open(os.path.join(tools, "chocolateyinstall.ps1"), "w") as f:
         print("writing install powershell script...")
-        f.write(t.safe_substitute(ZIPURL=url, PACKAGENAME=PACKAGENAME, CHECKSUM=sha512))
+        f.write(t.safe_substitute(ZIPURL=url, PACKAGENAME=constants.PACKAGENAME, CHECKSUM=sha512))
 
     # write nuspec package metadata
     with open(os.path.join(scriptDir,"nuspec_template")) as f:
         stringData = f.read()
     t = Template(stringData)
-    nuspecFile = os.path.join(buildFolder, PACKAGENAME+".nuspec")
+    nuspecFile = os.path.join(constants.BUILDFOLDER, constants.PACKAGENAME+".nuspec")
     with open(nuspecFile,'w') as f:
         print("writing nuspec...")
-        f.write(t.safe_substitute(PACKAGENAME=PACKAGENAME, CHOCOVERSION=chocoVersion))
+        f.write(t.safe_substitute(PACKAGENAME=constants.PACKAGENAME, CHOCOVERSION=chocoVersion))
     
     print("building package...")
     # run choco pack, stdout is merged into python interpreter stdout
-    binary = subprocess.check_output(["choco", "pack", nuspecFile, "--outputdirectory", artifactFolder])
+    binary = subprocess.check_output(["choco", "pack", nuspecFile, "--outputdirectory", constants.ARTIFACTFOLDER])
     printToConsole(binary)
     assert("Successfully created package" in binary.decode('ascii'))
     
     
-def installPackage(artifactFolder, version):
-    nupkg = os.path.join(artifactFolder, f"{PACKAGENAME}.{getChocoVersion(version)}.nupkg")
+def installPackage(version = constants.VERSION):
+    nupkg = os.path.join(constants.ARTIFACTFOLDER, f"{constants.PACKAGENAME}.{getChocoVersion(version)}.nupkg")
     print(f"installing {nupkg}...")
     binary = subprocess.check_output(["choco", "install", nupkg, '-y'])
     printToConsole(binary)
-    assert(f"{PACKAGENAME} package files install completed" in binary.decode('ascii'))
+    assert(f"{constants.PACKAGENAME} package files install completed" in binary.decode('ascii'))
     # TODO verify that under %ChocolateyInstall%/lib has the install script and unzip executable
 
-def uninstallPackage(artifactFolder, version):
-    print(f"uninstalling {PACKAGENAME}...")
-    binary = subprocess.check_output(["choco", "uninstall", PACKAGENAME])
+def uninstallPackage(version = constants.VERSION):
+    print(f"uninstalling {constants.PACKAGENAME}...")
+    binary = subprocess.check_output(["choco", "uninstall", constants.PACKAGENAME])
     printToConsole(binary)
-    assert(f"{PACKAGENAME} has been successfully uninstalled" in binary.decode('ascii'))
+    assert(f"{constants.PACKAGENAME} has been successfully uninstalled" in binary.decode('ascii'))
     
 # FIXME why does this line not work when import module from sibling package
 if __name__ == "__main__":
