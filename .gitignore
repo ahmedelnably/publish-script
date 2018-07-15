@@ -1,6 +1,7 @@
 *.nupkg
 *.zip
 .vscode
+config.json
 
 build/
 artifact/
