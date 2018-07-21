@@ -6,6 +6,7 @@ import subprocess
 from string import Template
 from shared import constants
 from shared.helper import printToConsole
+from shared.helper import produceHashForfile
 
 def getChocoVersion(version):
     # chocolatey do not support semantic versioning2.0.0 yet
@@ -37,11 +38,8 @@ def preparePackage(version = constants.VERSION):
         print(f"downloading from {url}...")
         wget.download(url)
 
-    # TODO checksum seems to be common in every package preparation, write utility instead of calling commend line
     # get the checksum
-    raw = subprocess.check_output(["checksum",f'-f="{fileName}"', '-t=sha512'], universal_newlines=True)
-    # checksum output with carriage return
-    sha512 = raw.strip()
+    sha512 = produceHashForfile(fileName, 'sha512')
     
     tools = os.path.join(constants.BUILDFOLDER, "tools")
     os.makedirs(tools)
