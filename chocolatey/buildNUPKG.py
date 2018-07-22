@@ -2,12 +2,12 @@
 import os
 import wget
 import sys
-import subprocess
 from string import Template
 from shared import constants
-from shared.helper import printToConsole
+from shared.helper import printReturnOutput
 from shared.helper import produceHashForfile
 
+HASH = "SHA512"
 def getChocoVersion(version):
     # chocolatey do not support semantic versioning2.0.0 yet
     # https://github.com/chocolatey/choco/issues/1610
@@ -23,14 +23,14 @@ def getChocoVersion(version):
 
 # for windows, there's v1 and v2 versions
 # assume buildFolder is clean
-def preparePackage(version = constants.VERSION):
+def preparePackage():
     # for windows, its x86 version only
-    fileName = f"Azure.Functions.Cli.win-x86.{version}.zip"
-    url = f'https://functionscdn.azureedge.net/public/{version}/{fileName}'
+    fileName = f"Azure.Functions.Cli.win-x86.{constants.VERSION}.zip"
+    url = f'https://functionscdn.azureedge.net/public/{constants.VERSION}/{fileName}'
 
     # version used in url is provided from user input
     # version used for packaging nuget packages needs a slight modification
-    chocoVersion = getChocoVersion(version)
+    chocoVersion = getChocoVersion(constants.VERSION)
 
     # download the zip
     # output to local folder
@@ -39,7 +39,7 @@ def preparePackage(version = constants.VERSION):
         wget.download(url)
 
     # get the checksum
-    sha512 = produceHashForfile(fileName, 'sha512')
+    fileHash = produceHashForfile(fileName, HASH)
     
     tools = os.path.join(constants.BUILDFOLDER, "tools")
     os.makedirs(tools)
@@ -52,7 +52,7 @@ def preparePackage(version = constants.VERSION):
     t = Template(stringData)
     with open(os.path.join(tools, "chocolateyinstall.ps1"), "w") as f:
         print("writing install powershell script...")
-        f.write(t.safe_substitute(ZIPURL=url, PACKAGENAME=constants.PACKAGENAME, CHECKSUM=sha512))
+        f.write(t.safe_substitute(ZIPURL=url, PACKAGENAME=constants.PACKAGENAME, CHECKSUM=fileHash, HASHALG=HASH))
 
     # write nuspec package metadata
     with open(os.path.join(scriptDir,"nuspec_template")) as f:
@@ -65,24 +65,23 @@ def preparePackage(version = constants.VERSION):
     
     print("building package...")
     # run choco pack, stdout is merged into python interpreter stdout
-    binary = subprocess.check_output(["choco", "pack", nuspecFile, "--outputdirectory", constants.ARTIFACTFOLDER])
-    printToConsole(binary)
-    assert("Successfully created package" in binary.decode('ascii'))
+    output = printReturnOutput(["choco", "pack", nuspecFile, "--outputdirectory", constants.ARTIFACTFOLDER])
+    assert("Successfully created package" in output)
     
-    
-def installPackage(version = constants.VERSION):
-    nupkg = os.path.join(constants.ARTIFACTFOLDER, f"{constants.PACKAGENAME}.{getChocoVersion(version)}.nupkg")
+def installPackage():
+    chocoVersion = getChocoVersion(constants.VERSION)
+    nupkg = os.path.join(constants.ARTIFACTFOLDER, f"{constants.PACKAGENAME}.{chocoVersion}.nupkg")
     print(f"installing {nupkg}...")
-    binary = subprocess.check_output(["choco", "install", nupkg, '-y'])
-    printToConsole(binary)
-    assert(f"{constants.PACKAGENAME} package files install completed" in binary.decode('ascii'))
+    output = printReturnOutput(["choco", "install", nupkg, '-y'])
+    firstTime = f"{constants.PACKAGENAME} package files install completed" in output
+    deja = f"{constants.PACKAGENAME} v{chocoVersion} already installed" in output
+    assert(firstTime or deja)
     # TODO verify that under %ChocolateyInstall%/lib has the install script and unzip executable
 
-def uninstallPackage(version = constants.VERSION):
+def uninstallPackage():
     print(f"uninstalling {constants.PACKAGENAME}...")
-    binary = subprocess.check_output(["choco", "uninstall", constants.PACKAGENAME])
-    printToConsole(binary)
-    assert(f"{constants.PACKAGENAME} has been successfully uninstalled" in binary.decode('ascii'))
+    output = printReturnOutput(["choco", "uninstall", constants.PACKAGENAME])
+    assert(f"{constants.PACKAGENAME} has been successfully uninstalled" in output)
     
 # FIXME why does this line not work when import module from sibling package
 if __name__ == "__main__":

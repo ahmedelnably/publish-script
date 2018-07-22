@@ -1,44 +1,45 @@
 #! /usr/bin/env python3.6
-import subprocess
 import sys
 import os
 import shutil
 import time
 import signal
 from .helper import restoreDirectory
-from .constants import CMD
+from .helper import printReturnOutput
+from . import constants
 
 @restoreDirectory
-def runExecutable(testFolder, version):
+def runExecutable():
     print("performing basic functionality test on func...")
     # 1. check the version output
     # TODO print output as well as test for version
     print("verify func...")
-    stdout = subprocess.check_output(CMD).decode('ascii')
-    versionOutput = f"Azure Functions Core Tools ({version})"
-    assert(versionOutput in stdout)
+    print(constants.VERSION)
+    output = printReturnOutput(constants.CMD)
+    assert(f"Azure Functions Core Tools ({constants.VERSION})" in output)
     # make sure command used in this test scripts are presented in the help
-    assert("init " in stdout)
-    assert("new " in stdout)
-    assert("start " in stdout)
+    assert("init " in output)
+    assert("new " in output)
+    assert("start " in output)
 
     # 2. test ability to create function
-    os.chdir(testFolder)
+    os.chdir(constants.TESTFOLDER)
 
     # 2.1 func init
     print("verfiy func init...")
-    stdout = subprocess.check_output(
-        [CMD, "init", "--worker-runtime", "dotnet"]).decode('ascii')
-    assert("was created successfully" in stdout)
+    output = printReturnOutput(
+        [constants.CMD, "init", "--worker-runtime", "dotnet"])
+    assert("was created successfully" in output)
     assert(os.path.exists("host.json"))
     assert(os.path.exists("test.csproj"))
+
     # 2.2 func new
     functionName = "dummyHttp"
     print("verify func new...")
-    stdout = subprocess.check_output(
-        [CMD, "new", "-l", "C#", "-t", "HttpTrigger", "-n", functionName]).decode('ascii')
-    assert("was created successfully" in stdout)
-    assert(os.path.exists(f"{functionName}.cs"))
+    # test csx since its scripting language, does not require additional runtimes
+    output = printReturnOutput(
+        [constants.CMD, "new", "--csx", "-t", "Http Trigger", "-n", functionName])
+    assert(os.path.exists(os.path.join(functionName,"run.csx")))
     # 2.3 func start
     # print("verify func start...")
     # popen = subprocess.Popen([CMD, "start", "--build"],
@@ -53,7 +54,3 @@ def runExecutable(testFolder, version):
     # assert(f"{functionName}: http://localhost:7071/api/{functionName}" in stdout)
 
     return True
-
-
-if __name__ == "__main__":
-    runExecutable(sys.argv[1], sys.argv[2])

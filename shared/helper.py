@@ -2,6 +2,7 @@
 import os
 import sys
 import hashlib
+import subprocess
 
 def restoreDirectory(f):
     def inner(*args, **kwargs):
@@ -18,6 +19,16 @@ def printToConsole(binary):
     print(consoleout)
     sys.stdout.buffer.write(binary)
     print(consoleout)
+
+def printReturnOutput(args):
+    try:
+        binary = subprocess.check_output(args)
+        printToConsole(binary)
+        return binary.decode('ascii')
+    except subprocess.CalledProcessError:
+        # rerun the command, direct output to stdout
+        subprocess.call(args)
+        raise
 
 BUFFERSIZE = 1024
 def produceHashForfile(filePath, hashType):

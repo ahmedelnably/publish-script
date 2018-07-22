@@ -1,11 +1,10 @@
 #! /usr/bin/env python3.6
 import platform
 import sys
-import shared.runTest as test
 import os
 import shutil
 from shared import constants
-
+from shared import runTest
 # 1. build package
 # { 2. clean install
 #   3. test executable
@@ -44,10 +43,10 @@ def main(*args):
         # TODO usually require sudo or administrator privilege
         dist.installPackage()
         # 3. test executable
-        assert(test.runExecutable())
+        assert(runTest.runExecutable())
         # 4. uninstall
         dist.uninstallPackage()
-    # verifyPackage()
+    verifyPackage()
 
 
 def initWorkingDir(dirName, clean = False):
