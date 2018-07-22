@@ -4,7 +4,6 @@ import sys
 import os
 import shutil
 from shared import constants
-from shared import runTest
 # 1. build package
 # { 2. clean install
 #   3. test executable
@@ -43,6 +42,7 @@ def main(*args):
         # TODO usually require sudo or administrator privilege
         dist.installPackage()
         # 3. test executable
+        from shared import runTest
         assert(runTest.runExecutable())
         # 4. uninstall
         dist.uninstallPackage()

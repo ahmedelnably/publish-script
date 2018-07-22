@@ -8,4 +8,5 @@ BUILDFOLDER = "build"
 TESTFOLDER = "test"
 
 # to be set in driver.py
+# do not use it as default argument!!
 VERSION = NotImplementedError

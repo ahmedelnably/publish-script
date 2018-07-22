@@ -14,7 +14,6 @@ def runExecutable():
     # 1. check the version output
     # TODO print output as well as test for version
     print("verify func...")
-    print(constants.VERSION)
     output = printReturnOutput(constants.CMD)
     assert(f"Azure Functions Core Tools ({constants.VERSION})" in output)
     # make sure command used in this test scripts are presented in the help
