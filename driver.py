@@ -18,15 +18,15 @@ def main(*args):
         d, _, __ = platform.linux_distribution()
         if d == "Ubuntu":
             import ubuntu.bulidDEB as dist
-            print("detect Ubuntu, start working on deb package...")
+            print("detect Ubuntu, start working on deb package")
         else:
-            print(f"does not support distribution {d} yet...")
+            print(f"does not support distribution {d} yet")
             return
     elif platformSystem == "Windows":
         import chocolatey.buildNUPKG as dist
-        print("detect Windows, start working on nupkg pacakge...")
+        print("detect Windows, start working on nupkg pacakge")
     else:
-        print(f"does not support platform {platformSystem} yet...")
+        print(f"does not support platform {platformSystem} yet")
         return
 
     # at root
@@ -40,11 +40,14 @@ def main(*args):
         initWorkingDir(constants.TESTFOLDER, True)
         # 2. clean install
         # TODO usually require sudo or administrator privilege
+        print("trying to install package")
         dist.installPackage()
         # 3. test executable
         from shared import runTest
+        print("trying to run tests")
         assert(runTest.runExecutable())
         # 4. uninstall
+        print("trying to uninstall package")
         dist.uninstallPackage()
     verifyPackage()
 
@@ -52,7 +55,7 @@ def main(*args):
 def initWorkingDir(dirName, clean = False):
     if clean:
         if os.path.exists(dirName):
-            print(f"trying to clear {dirName}/ directory ...")
+            print(f"trying to clear {dirName}/ directory")
             shutil.rmtree(dirName)
     print(f"trying to create {dirName}/ directory")
     os.makedirs(dirName, exist_ok=True)

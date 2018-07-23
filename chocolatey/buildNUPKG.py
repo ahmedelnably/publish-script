@@ -1,4 +1,6 @@
 #! /usr/bin/env python3.6
+
+# depends on chocolaty
 import os
 import wget
 import sys
@@ -23,6 +25,8 @@ def getChocoVersion(version):
 
 # for windows, there's v1 and v2 versions
 # assume buildFolder is clean
+# output a deb nupkg
+# depends on chocolatey
 def preparePackage():
     # for windows, its x86 version only
     fileName = f"Azure.Functions.Cli.win-x86.{constants.VERSION}.zip"
@@ -35,7 +39,7 @@ def preparePackage():
     # download the zip
     # output to local folder
     if not os.path.exists(fileName):
-        print(f"downloading from {url}...")
+        print(f"downloading from {url}")
         wget.download(url)
 
     # get the checksum
@@ -51,7 +55,7 @@ def preparePackage():
         stringData = f.read() 
     t = Template(stringData)
     with open(os.path.join(tools, "chocolateyinstall.ps1"), "w") as f:
-        print("writing install powershell script...")
+        print("writing install powershell script")
         f.write(t.safe_substitute(ZIPURL=url, PACKAGENAME=constants.PACKAGENAME, CHECKSUM=fileHash, HASHALG=HASH))
 
     # write nuspec package metadata
@@ -60,10 +64,9 @@ def preparePackage():
     t = Template(stringData)
     nuspecFile = os.path.join(constants.BUILDFOLDER, constants.PACKAGENAME+".nuspec")
     with open(nuspecFile,'w') as f:
-        print("writing nuspec...")
+        print("writing nuspec")
         f.write(t.safe_substitute(PACKAGENAME=constants.PACKAGENAME, CHOCOVERSION=chocoVersion))
     
-    print("building package...")
     # run choco pack, stdout is merged into python interpreter stdout
     output = printReturnOutput(["choco", "pack", nuspecFile, "--outputdirectory", constants.ARTIFACTFOLDER])
     assert("Successfully created package" in output)
@@ -71,7 +74,6 @@ def preparePackage():
 def installPackage():
     chocoVersion = getChocoVersion(constants.VERSION)
     nupkg = os.path.join(constants.ARTIFACTFOLDER, f"{constants.PACKAGENAME}.{chocoVersion}.nupkg")
-    print(f"installing {nupkg}...")
     output = printReturnOutput(["choco", "install", nupkg, '-y'])
     firstTime = f"{constants.PACKAGENAME} package files install completed" in output
     deja = f"{constants.PACKAGENAME} v{chocoVersion} already installed" in output
@@ -79,7 +81,6 @@ def installPackage():
     # TODO verify that under %ChocolateyInstall%/lib has the install script and unzip executable
 
 def uninstallPackage():
-    print(f"uninstalling {constants.PACKAGENAME}...")
     output = printReturnOutput(["choco", "uninstall", constants.PACKAGENAME])
     assert(f"{constants.PACKAGENAME} has been successfully uninstalled" in output)
     

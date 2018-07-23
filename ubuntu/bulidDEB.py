@@ -1,19 +1,16 @@
 #! /usr/bin/env python3.6
-
-# takes in a zip url
-# output a deb package
-# depends on gzip, dpkg-deb, strip and md5sum
-
-import sys
 import os
 import wget
 import zipfile
 import shutil
-import subprocess
 import datetime
 from string import Template
 from shared import constants
 from shared.helper import restoreDirectory
+from shared.helper import produceHashForfile
+from shared.helper import printReturnOutput
+
+DEPENDENCY = "dotnet-runtime-deps-2.1"
 
 def returnDebVersion(version):
     # version used in url is provided from user input
@@ -28,18 +25,20 @@ def returnDebVersion(version):
     else:
         raise NotImplementedError
 
+# output a deb package
+# depends on gzip, dpkg-deb, strip
 @restoreDirectory
-def preparePackage(version = constants.VERSION):
+def preparePackage():
     # for ubuntu, its x64 version only
-    fileName = f"Azure.Functions.Cli.linux-x64.{version}.zip"
-    url = f'https://functionscdn.azureedge.net/public/{version}/{fileName}'
+    fileName = f"Azure.Functions.Cli.linux-x64.{constants.VERSION}.zip"
+    url = f'https://functionscdn.azureedge.net/public/{constants.VERSION}/{fileName}'
 
-    debianVersion = returnDebVersion(version)
+    debianVersion = returnDebVersion(constants.VERSION)
 
     # download the zip
     # output to local folder
     if not os.path.exists(fileName):
-        print(f"downloading from {url}...")
+        print(f"downloading from {url}")
         wget.download(url)
 
     # all directories path are relative
@@ -51,7 +50,7 @@ def preparePackage(version = constants.VERSION):
     os.makedirs(usrlibFunc)
     # unzip here
     with zipfile.ZipFile(fileName) as f:
-        print(f"extracting to {usrlibFunc}...")
+        print(f"extracting to {usrlibFunc}")
         f.extractall(usrlibFunc)
 
     # create relative symbolic link under bin directory, change mode to executable
@@ -59,7 +58,7 @@ def preparePackage(version = constants.VERSION):
     os.makedirs(usrbin)
     # cd into usr/bin, create relative symlink
     os.chdir(usrbin)
-    print("trying to create symlink for func...")
+    print("create symlink for func")
     os.symlink(f"../lib/{constants.PACKAGENAME}/func", "func")
     # executable to be returned
     exeFullPath = os.path.abspath("func")
@@ -67,8 +66,8 @@ def preparePackage(version = constants.VERSION):
     # go back to root
     os.chdir("../..")
     # strip sharedobjects
-    subprocess.run(
-        "find -name *.so | xargs strip --strip-unneeded", shell=True)
+    # TODO use glob module
+    output = printReturnOutput(["find", "-name", "*.so", "|", "xargs", "strip", "--strip-unneeded"], shell=True)
 
     document = os.path.join("usr", "share", "doc", constants.PACKAGENAME)
     os.makedirs(document)
@@ -84,25 +83,31 @@ def preparePackage(version = constants.VERSION):
     # datetime example: Tue, 06 April 2018 16:32:31
     time = datetime.datetime.utcnow().strftime("%a, %d %b %Y %X")
     with open(os.path.join(document, "changelog.Debian"), "w") as f:
-        print(f"writing changelog with date utc: {t}")
-        f.write(t.safe_substitute(DEBIANVERSION=debianVersion, DATETIME=time, VERSION=version, PACKAGENAME=constants.PACKAGENAME))
-    # by default gzip compress file 'in place
-    subprocess.run(
-        ["gzip", "-9", "-n", os.path.join(document, "changelog.Debian")])
+        print(f"writing changelog with date utc: {time}")
+        f.write(t.safe_substitute(DEBIANVERSION=debianVersion, DATETIME=time, VERSION=constants.VERSION, PACKAGENAME=constants.PACKAGENAME))
+    # by default gzip compress file in place
+    output = printReturnOutput(["gzip", "-9", "-n", os.path.join(document, "changelog.Debian")])
 
     debian = "DEBIAN"
     os.makedirs(debian)
     # get all files under usr/ and produce a md5 hash
-    print("trying to produce md5 hashes...")
-    subprocess.run(
-        "find usr/* -type f | xargs md5sum > DEBIAN/md5sums", shell=True)
+    print("trying to produce md5 hashes")
+    with open('DEBIAN/md5sums', 'w') as md5file:
+        # iterate over all files under usr/
+        # get their md5sum
+        for dirpath, _, filenames in os.walk('usr'):
+            for f in filenames:
+                filepath = os.path.join(dirpath, f)
+                if not os.path.islink(filepath):
+                    h = produceHashForfile(filepath, 'md5', Upper=False)
+                    md5file.write(f"{h}  {filepath}\n")
 
     # produce the control file from template
     with open(os.path.join(scriptDir, "control_template")) as f:
         stringData = f.read()
     t = Template(stringData)
     with open(os.path.join(debian, "control"), "w") as f:
-        print("trying to write control file...")
+        print("trying to write control file")
         f.write(t.safe_substitute(DEBIANVERSION=debianVersion, PACKAGENAME=constants.PACKAGENAME))
 
     # before publish
@@ -119,6 +124,26 @@ def preparePackage(version = constants.VERSION):
     os.chmod(exeFullPath, 0o755)
 
     os.chdir("../..") 
-    print("trying to produce deb file...")
-    subprocess.run(["fakeroot", "dpkg-deb", "--build",
+    output = printReturnOutput(["fakeroot", "dpkg-deb", "--build",
                    os.path.join(constants.BUILDFOLDER, packageFolder), os.path.join(constants.ARTIFACTFOLDER, packageFolder+".deb")])
+    assert(f"building package '{constants.PACKAGENAME}'" in output)
+    
+
+def installPackage():
+    debVersion = returnDebVersion(constants.VERSION)
+    deb = os.path.join(constants.ARTIFACTFOLDER,f"{constants.PACKAGENAME}_{debVersion}.deb")
+    # -f fix broken dependency
+    output = printReturnOutput(["sudo", "apt", "install", "-f", "./"+deb])
+    coreTools = f"Setting up {constants.PACKAGENAME} ({debVersion})" in output
+    coreDeps = f"Setting up {DEPENDENCY}" in output
+    deja = f"{constants.PACKAGENAME} is already the newest version ({debVersion})"
+    assert((coreTools and coreDeps) or deja)
+
+def uninstallPackage():
+    debVersion = returnDebVersion(constants.VERSION)
+    output = printReturnOutput(["sudo", "dpkg", "--remove", constants.PACKAGENAME])
+    assert(f"Removing {constants.PACKAGENAME} ({debVersion})" in output)
+    output = printReturnOutput(["sudo", "apt-get", "autoremove", "-y"])
+    # only 1 dependency
+    assert(f"1 to remove" in output)
+    assert(f"Removing {DEPENDENCY}" in output)

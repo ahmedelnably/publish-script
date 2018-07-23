@@ -38,7 +38,7 @@ def get_secret(secret_name):
     """
     authenticates to the Azure Key Vault by providing a callback to authenticate using adal
     """
-    print('getting secret...')
+    print('getting secret')
     secret_bundle = client.get_secret(vault_uri, secret_name, secret_version=KeyVaultId.version_none)
     print(secret_bundle)
 
