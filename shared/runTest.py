@@ -23,12 +23,10 @@ def runExecutable():
     os.chdir(constants.TESTFOLDER)
 
     # 2.1 func init
-    # FIXME ...why is the output contains dotnet new?
     output = printReturnOutput(
-        [constants.CMD, "init", "--worker-runtime", 'dotnet'])
-    assert("was created successfully" in output)
+        [constants.CMD, "init", "--worker-runtime", 'dotnet', '--csx'])
     assert(os.path.exists("host.json"))
-    assert(os.path.exists("test.csproj"))
+    assert(os.path.exists("local.settings.json"))
 
     # 2.2 func new
     functionName = "dummyHttp"

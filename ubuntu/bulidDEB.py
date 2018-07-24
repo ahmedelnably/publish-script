@@ -133,7 +133,7 @@ def installPackage():
     debVersion = returnDebVersion(constants.VERSION)
     deb = os.path.join(constants.ARTIFACTFOLDER,f"{constants.PACKAGENAME}_{debVersion}.deb")
     # -f fix broken dependency
-    output = printReturnOutput(["sudo", "apt", "install", "-f", "./"+deb])
+    output = printReturnOutput(["sudo", "apt", "install", "-f", "./"+deb, "-y"])
     coreTools = f"Setting up {constants.PACKAGENAME} ({debVersion})" in output
     coreDeps = f"Setting up {DEPENDENCY}" in output
     deja = f"{constants.PACKAGENAME} is already the newest version ({debVersion})"
@@ -144,6 +144,4 @@ def uninstallPackage():
     output = printReturnOutput(["sudo", "dpkg", "--remove", constants.PACKAGENAME])
     assert(f"Removing {constants.PACKAGENAME} ({debVersion})" in output)
     output = printReturnOutput(["sudo", "apt-get", "autoremove", "-y"])
-    # only 1 dependency
-    assert(f"1 to remove" in output)
     assert(f"Removing {DEPENDENCY}" in output)
