@@ -51,6 +51,8 @@ def main(*args):
         dist.uninstallPackage()
     verifyPackage()
 
+    dist.publish()
+
 
 def initWorkingDir(dirName, clean = False):
     if clean:

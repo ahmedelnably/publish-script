@@ -9,8 +9,12 @@ from shared import constants
 from shared.helper import restoreDirectory
 from shared.helper import produceHashForfile
 from shared.helper import printReturnOutput
+from shared.azurekeyvault import get_secret
 
 DEPENDENCY = "dotnet-runtime-deps-2.1"
+publishVersions = {"18.04LTS_bionic": "5a9dc3f2424a5c053cc3ff2e", 
+                "17.10_artful":"59d3d49df3c7fa07032ce371", 
+                "16.04LTS_xenial": "582bd623ae062a5d0fec5b8c"}
 
 def returnDebVersion(version):
     # version used in url is provided from user input
@@ -144,4 +148,41 @@ def uninstallPackage():
     output = printReturnOutput(["sudo", "dpkg", "--remove", constants.PACKAGENAME])
     assert(f"Removing {constants.PACKAGENAME} ({debVersion})" in output)
     output = printReturnOutput(["sudo", "apt-get", "autoremove", "-y"])
-    assert(f"Removing {DEPENDENCY}" in output)
+    # if user has dotnet core installed, this dependency can not be removed
+    # assert(f"Removing {DEPENDENCY}" in output)
+
+def publish():
+    def getUserConfirm():
+        while True:
+            userInput = input('Enter "Continue"/"Skip"/"Abort"\n').upper()
+            if userInput == "CONTINUE":
+                return 1
+            elif userInput == "SKIP":
+                return 2
+            elif userInput == "ABORT":
+                return 3
+            else:
+                print("???Excuse me")
+    for key, value in publishVersions.items():
+        # write a temp file
+        print(f"publish for {key}")
+        confirm = getUserConfirm()
+        if confirm == 1:
+            pass
+        elif confirm == 2:
+            continue
+        else:
+            return
+        config = os.path.join(constants.ARTIFACTFOLDER,key)
+        if not os.path.exists(config):
+            print("can not find publish config. create new")
+            with open(os.path.join(os.path.abspath(os.path.dirname(__file__)),"config_template")) as f:
+                stringData = f.read()
+            t = Template(stringData)
+            # retrieve password from keyvault
+            pw = get_secret("functionlinuxpublish")
+            print("trying to construct a config file")
+            with open(config,"w") as f:
+                f.write(t.safe_substitute(PW=pw, REPO=value))
+        printReturnOutput(["repoapi_client", "-config", os.path.join(constants.ARTIFACTFOLDER,key),
+         "-addfile", os.path.join(constants.ARTIFACTFOLDER,f"{constants.PACKAGENAME}_{returnDebVersion(constants.VERSION)}.deb")], confirm=True)

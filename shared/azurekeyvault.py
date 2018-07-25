@@ -2,12 +2,13 @@
 # source code:
 # https://github.com/Azure-Samples/key-vault-python-authentication/blob/d4c4cd53ccf4ba6252d35f881892265b09c5e476/authentication_sample.py#L90-L131
 import adal
+import os
 from azure.keyvault import KeyVaultClient, KeyVaultAuthentication
 from azure.keyvault import KeyVaultId
 import json
 
 # read configuration file
-with open('config.json') as f:
+with open(os.path.join(os.path.abspath(os.path.dirname(__file__)),"config.json")) as f:
     config = json.load(f)
 
 tenant_id = config['keyvault']['tenant_id']
@@ -40,7 +41,7 @@ def get_secret(secret_name):
     """
     print('getting secret')
     secret_bundle = client.get_secret(vault_uri, secret_name, secret_version=KeyVaultId.version_none)
-    print(secret_bundle)
+    return secret_bundle.value
 
 if __name__ == "__main__":
     get_secret("shunpythonsecrettest")

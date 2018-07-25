@@ -14,12 +14,12 @@ def restoreDirectory(f):
 
 # for some commands, returnCode means success
 # for others you need to verify the output string yourself
-def printReturnOutput(args, shell=False):
+def printReturnOutput(args, shell=False, confirm=False):
     begin = '=' * 38 +  "Running Subprocess" + "=" * 38
     print(begin)
     print(' '.join(args))
-    # DEBUG hit any key to continue, for debug purpose
-    # input('...Continue? hit "Enter" to Confirm')
+    if (confirm):
+        input("This seems to be a non reversable behavior, do you still want to proceed? (Ctrl-C if you are not sure)\n")
     output = '-' * 40 + "Console Output" + "-" * 40
     print(output)
     try:
