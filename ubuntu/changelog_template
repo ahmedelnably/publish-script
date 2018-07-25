@@ -1,5 +1,5 @@
 $PACKAGENAME ($DEBIANVERSION) unstable; urgency=medium
 
-  * https://github.com/Azure/azure-functions-core-tools/releases/tag/$VERSION
+  * https://github.com/Azure/$PACKAGENAME/releases/tag/$VERSION
 
  -- ShunXian Cai <shucai@microsoft.com>  $DATETIME -0800

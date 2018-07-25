@@ -6,6 +6,6 @@ Homepage: https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-l
 Vcs-Git: https://github.com/Azure/azure-functions-cli.git
 Package: $PACKAGENAME
 Architecture: amd64
-Depends: dotnet-runtime-deps-2.1 (>= 2.1.1)
+Depends: $DEPENDENCY
 Description: Azure Function Cli 2.0
  The Azure Functions Core Tools provide a local development experience for creating, developing, testing, running, and debugging Azure Functions.

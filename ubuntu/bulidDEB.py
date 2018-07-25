@@ -12,7 +12,6 @@ from shared.helper import printReturnOutput
 from shared.azurekeyvault import get_secret
 from shared.helper import getUserConfirm
 
-DEPENDENCY = "dotnet-runtime-deps-2.1"
 publishVersions = {"18.04LTS_bionic": "5a9dc3f2424a5c053cc3ff2e", 
                 "17.10_artful":"59d3d49df3c7fa07032ce371", 
                 "16.04LTS_xenial": "582bd623ae062a5d0fec5b8c"}
@@ -108,12 +107,17 @@ def preparePackage():
                     md5file.write(f"{h}  {filepath}\n")
 
     # produce the control file from template
+    deps = []
+    for key, value in constants.LINUXDEPS.items():
+        entry = f"{key} ({value})"
+        deps.append(entry)
+    deps = ','.join(deps)
     with open(os.path.join(scriptDir, "control_template")) as f:
         stringData = f.read()
     t = Template(stringData)
     with open(os.path.join(debian, "control"), "w") as f:
         print("trying to write control file")
-        f.write(t.safe_substitute(DEBIANVERSION=debianVersion, PACKAGENAME=constants.PACKAGENAME))
+        f.write(t.safe_substitute(DEBIANVERSION=debianVersion, PACKAGENAME=constants.PACKAGENAME, DEPENDENCY=deps))
 
     # before publish
     print(f"change permission of files in {os.getcwd()}")
@@ -140,8 +144,11 @@ def installPackage():
     # -f fix broken dependency
     output = printReturnOutput(["sudo", "apt", "install", "-f", "./"+deb, "-y"])
     coreTools = f"Setting up {constants.PACKAGENAME} ({debVersion})" in output
-    coreDeps = f"Setting up {DEPENDENCY}" in output
-    deja = f"{constants.PACKAGENAME} is already the newest version ({debVersion})"
+    coreDeps = True
+    # if dotnet core sdk is installed, dependency will not be installed again
+    # for key in constants.LINUXDEPS.keys():
+    #     coreDeps = (f"Setting up {key}" in output) and coreDeps
+    deja = f"{constants.PACKAGENAME} is already the newest version ({debVersion})" in output
     assert((coreTools and coreDeps) or deja)
 
 def uninstallPackage():

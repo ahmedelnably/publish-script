@@ -10,9 +10,6 @@ from shared.helper import restoreDirectory
 from shared.helper import produceHashForfile
 from shared.helper import printReturnOutput
 
-DEPENDENCY = "dotnet-runtime-deps-2.1"
-DEPENDENCYVERSION = ">= 2.1.1"
-
 def returnRpmVersion(version):
     # http://ftp.rpm.org/max-rpm/s1-rpm-inside-tags.html
     # The version tag defines the version of the software being packaged. 
@@ -95,10 +92,14 @@ def preparePackage():
     with open(os.path.join(scriptDir, "spec_template")) as f:
         stringData = f.read()
     t = Template(stringData)
-    # TODO fix date sub
     time = datetime.datetime.utcnow().strftime("%a %b %d %Y")
+    deps = []
+    for key, value in constants.LINUXDEPS.items():
+        entry = f"{key} {value}"
+        deps.append(entry)
+    deps = ",".join(deps)
     with open(os.path.join(RpmBuildAbs, "SPECS", f"{constants.PACKAGENAME}.spec"), 'w') as f:
-        f.write(t.safe_substitute(PACKAGENAME=constants.PACKAGENAME, RPMVERSION=rpmVersion, DEPENDENCY=DEPENDENCY, DEPENDENCYVERSION=DEPENDENCYVERSION, DATE=time))
+        f.write(t.safe_substitute(PACKAGENAME=constants.PACKAGENAME, RPMVERSION=rpmVersion, DEPENDENCY=deps, DATE=time))
     
     os.chdir(os.path.join(RpmBuildAbs,"SPECS"))
     output = printReturnOutput(["rpmbuild", "-bb", f"{constants.PACKAGENAME}.spec"])

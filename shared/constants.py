@@ -11,3 +11,6 @@ TESTFOLDER = "test"
 # do not use it as default argument!!
 VERSION = NotImplementedError
 DRIVERROOTDIR = NotImplementedError
+
+# linux specific, for now, its ubuntu + fedora
+LINUXDEPS = {"dotnet-runtime-deps-2.1": ">= 2.1.1"}

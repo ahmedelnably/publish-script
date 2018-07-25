@@ -6,7 +6,7 @@ Summary:        Azure Function Cli 2.0
 License:        MIT
 URL:            https://github.com/Azure/$PACKAGENAME
 Source:         $PACKAGENAME-$RPMVERSION.tar.gz
-Requires:       $DEPENDENCY $DEPENDENCYVERSION
+Requires:       $DEPENDENCY
 
 %description
 The Azure Functions Core Tools provide a local development experience for creating, developing, testing, running, and debugging Azure Functions.
