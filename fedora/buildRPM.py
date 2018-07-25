@@ -38,8 +38,9 @@ def preparePackage():
     helper.printReturnOutput(["rpmdev-setuptree"])
     RpmBuildAbs = os.path.join(os.environ['HOME'], "rpmbuild")
 
+    os.chdir(buildFolder)
     # tar the build/ and put it in rpmbuild/SOURCE
-    helper.printReturnOutput(["tar", "-czvf", os.path.join(RpmBuildAbs, "SOURCES", f"{packageFolder}.tar.gz"), constants.BUILDFOLDER])
+    helper.printReturnOutput(["tar", "-czvf", os.path.join(RpmBuildAbs, "SOURCES", f"{packageFolder}.tar.gz"), "../"])
 
     print("produce .spec under ~/rpmbuild/SPECS/")
     scriptDir = os.path.abspath(os.path.dirname(__file__))
