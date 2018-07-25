@@ -10,16 +10,19 @@ from shared.helper import getUserConfirm
 #   3. test executable
 #   4. uninstall }  => all part of testing
 
-
 def main(*args):
     # assume follow semantic versioning 2.0.0
     constants.VERSION = args[1]
+    constants.DRIVERROOTDIR = os.path.dirname(os.path.abspath(__file__))
     platformSystem = platform.system()
     if platformSystem == "Linux":
         d, _, __ = platform.linux_distribution()
         if d == "Ubuntu":
             import ubuntu.bulidDEB as dist
             print("detect Ubuntu, start working on deb package")
+        elif d == "Fedora":
+            import fedora.buildRPM as dist
+            print("detect Fedora, start working on rpm package")
         else:
             print(f"does not support distribution {d} yet")
             return

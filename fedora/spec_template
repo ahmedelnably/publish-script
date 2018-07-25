@@ -1,0 +1,28 @@
+Name:           $PACKAGENAME
+Version:        $RPMVERSION
+Release:        1%{?dist}
+Summary:        Azure Function Cli 2.0
+
+License:        MIT
+URL:            https://github.com/Azure/$PACKAGENAME
+Source:         $PACKAGENAME-$RPMVERSION.tar.gz
+Requires:       $DEPENDENCY $DEPENDENCYVERSION
+
+%description
+The Azure Functions Core Tools provide a local development experience for creating, developing, testing, running, and debugging Azure Functions.
+
+%prep
+%autosetup
+
+%install
+rm -rf $RPM_BUILD_ROOT
+cp -R . $RPM_BUILD_ROOT
+exit 0
+
+%files
+/usr/bin/*
+/usr/lib/*
+
+%changelog
+* $DATE Microsoft
+- 
