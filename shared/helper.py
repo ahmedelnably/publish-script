@@ -12,6 +12,19 @@ def restoreDirectory(f):
         return returnV
     return inner
 
+def getUserConfirm(display):
+    print(display)
+    while True:
+        userInput = input('Enter "Continue"/"Skip"/"Abort"\n').upper()
+        if userInput == "CONTINUE":
+            return True
+        elif userInput == "SKIP":
+            return False
+        elif userInput == "ABORT":
+            sys.exit()
+        else:
+            print("Excuse me sir!??")
+
 # for some commands, returnCode means success
 # for others you need to verify the output string yourself
 def printReturnOutput(args, shell=False, confirm=False):
@@ -50,3 +63,4 @@ def produceHashForfile(filePath, hashType, Upper = True):
         return hashobj.hexdigest().upper()
     else:
         return hashobj.hexdigest().lower()
+

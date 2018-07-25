@@ -4,6 +4,7 @@ import sys
 import os
 import shutil
 from shared import constants
+from shared.helper import getUserConfirm
 # 1. build package
 # { 2. clean install
 #   3. test executable
@@ -34,7 +35,8 @@ def main(*args):
     initWorkingDir(constants.ARTIFACTFOLDER)
 
     # 1. build package
-    dist.preparePackage()
+    if getUserConfirm("building package"):
+        dist.preparePackage()
 
     def verifyPackage():
         initWorkingDir(constants.TESTFOLDER, True)
@@ -49,9 +51,12 @@ def main(*args):
         # 4. uninstall
         print("trying to uninstall package")
         dist.uninstallPackage()
-    verifyPackage()
+    
+    if getUserConfirm("test pacakge with actual install"):
+        verifyPackage()
 
-    dist.publish()
+    if getUserConfirm("publish package online"):
+        dist.publish()
 
 
 def initWorkingDir(dirName, clean = False):

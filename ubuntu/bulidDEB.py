@@ -10,6 +10,7 @@ from shared.helper import restoreDirectory
 from shared.helper import produceHashForfile
 from shared.helper import printReturnOutput
 from shared.azurekeyvault import get_secret
+from shared.helper import getUserConfirm
 
 DEPENDENCY = "dotnet-runtime-deps-2.1"
 publishVersions = {"18.04LTS_bionic": "5a9dc3f2424a5c053cc3ff2e", 
@@ -152,27 +153,9 @@ def uninstallPackage():
     # assert(f"Removing {DEPENDENCY}" in output)
 
 def publish():
-    def getUserConfirm():
-        while True:
-            userInput = input('Enter "Continue"/"Skip"/"Abort"\n').upper()
-            if userInput == "CONTINUE":
-                return 1
-            elif userInput == "SKIP":
-                return 2
-            elif userInput == "ABORT":
-                return 3
-            else:
-                print("???Excuse me")
     for key, value in publishVersions.items():
-        # write a temp file
-        print(f"publish for {key}")
-        confirm = getUserConfirm()
-        if confirm == 1:
-            pass
-        elif confirm == 2:
+        if not getUserConfirm(f"publish for {key}"):
             continue
-        else:
-            return
         config = os.path.join(constants.ARTIFACTFOLDER,key)
         if not os.path.exists(config):
             print("can not find publish config. create new")
