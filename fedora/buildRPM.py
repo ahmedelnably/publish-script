@@ -6,9 +6,7 @@ import datetime
 import shutil
 from string import Template
 from shared import constants
-from shared.helper import restoreDirectory
-from shared.helper import produceHashForfile
-from shared.helper import printReturnOutput
+from shared import helper
 
 def returnRpmVersion(version):
     # http://ftp.rpm.org/max-rpm/s1-rpm-inside-tags.html
@@ -26,66 +24,22 @@ def returnRpmVersion(version):
 
 # output a rpm package
 # depends on rpmdevtools, strip, tar
-@restoreDirectory
+@helper.restoreDirectory
 def preparePackage():
-    # for linux, its x64 version only (ubuntu has already dropped x86 support)
-    fileName = f"Azure.Functions.Cli.linux-x64.{constants.VERSION}.zip"
-    url = f'https://functionscdn.azureedge.net/public/{constants.VERSION}/{fileName}'
-
-    # download the zip
-    # output to local folder
-    if not os.path.exists(fileName):
-        print(f"downloading from {url}")
-        wget.download(url)
+    os.chdir(constants.DRIVERROOTDIR)
 
     rpmVersion = returnRpmVersion(constants.VERSION)
-    # massage files then put them into ~/rpmbuild/SOURCES
-    # TODO copy from deb, make this true for all linux
-    # all directories path are relative
     packageFolder = f"{constants.PACKAGENAME}-{rpmVersion}"
-    root = os.path.join(constants.BUILDFOLDER, packageFolder)
-    usr = os.path.join(root, "usr")
-    usrlib = os.path.join(usr, "lib")
-    usrlibFunc = os.path.join(usrlib, constants.PACKAGENAME)
-    os.makedirs(usrlibFunc)
-    # unzip here
-    with zipfile.ZipFile(fileName) as f:
-        print(f"extracting to {usrlibFunc}")
-        f.extractall(usrlibFunc)
+    buildFolder = os.path.join(os.getcwd(), constants.BUILDFOLDER, packageFolder)
+    helper.linuxOutput(buildFolder)
 
-    # create relative symbolic link under bin directory, change mode to executable
-    usrbin = os.path.join(usr, "bin")
-    os.makedirs(usrbin)
-    # cd into usr/bin, create relative symlink
-    os.chdir(usrbin)
-    print("create symlink for func")
-    os.symlink(f"../lib/{constants.PACKAGENAME}/func", "func")
-    exeFullPath = os.path.abspath("func")
-
-    # go back to root
-    os.chdir("../..")
-    # strip sharedobjects
-    # TODO use glob module
-    printReturnOutput(["find", "-name", "*.so", "|", "xargs", "strip", "--strip-unneeded"], shell=True)
-
-    print(f"change permission of files in {os.getcwd()}")
-    for r, ds, fs in os.walk(os.getcwd()):
-        for d in ds:
-            # folder permission to 755
-            os.chmod(os.path.join(r, d), 0o755)
-        for f in fs:
-            # file permission to 644
-            os.chmod(os.path.join(r, f), 0o644)
-    print(f"change bin/func permission to 755")
-    # octal
-    os.chmod(exeFullPath, 0o755)
-
+    # massage files then put them into ~/rpmbuild/SOURCES
     # setting up rpm packaging work space at ~/rpmbuild
-    printReturnOutput(["rpmdev-setuptree"])
+    helper.printReturnOutput(["rpmdev-setuptree"])
     RpmBuildAbs = os.path.join(os.environ['HOME'], "rpmbuild")
 
     # tar the build/ and put it in rpmbuild/SOURCE
-    printReturnOutput(["tar", "-czvf", os.path.join(RpmBuildAbs, "SOURCES", f"{packageFolder}.tar.gz"), "../"])
+    helper.printReturnOutput(["tar", "-czvf", os.path.join(RpmBuildAbs, "SOURCES", f"{packageFolder}.tar.gz"), constants.BUILDFOLDER])
 
     print("produce .spec under ~/rpmbuild/SPECS/")
     scriptDir = os.path.abspath(os.path.dirname(__file__))
@@ -102,7 +56,7 @@ def preparePackage():
         f.write(t.safe_substitute(PACKAGENAME=constants.PACKAGENAME, RPMVERSION=rpmVersion, DEPENDENCY=deps, DATE=time))
     
     os.chdir(os.path.join(RpmBuildAbs,"SPECS"))
-    output = printReturnOutput(["rpmbuild", "-bb", f"{constants.PACKAGENAME}.spec"])
+    output = helper.printReturnOutput(["rpmbuild", "-bb", f"{constants.PACKAGENAME}.spec"])
 
     # get package name from output
     # Wrote: /home/shun/rpmbuild/RPMS/x86_64/azure-functions-core-tools-2.0.1~beta.33-1.fc27.x86_64.rpm

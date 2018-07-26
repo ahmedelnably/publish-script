@@ -3,6 +3,7 @@ import os
 import sys
 import hashlib
 import subprocess
+from . import constants
 
 def restoreDirectory(f):
     def inner(*args, **kwargs):
@@ -64,3 +65,59 @@ def produceHashForfile(filePath, hashType, Upper = True):
     else:
         return hashobj.hexdigest().lower()
 
+@restoreDirectory
+def linuxOutput(buildFolder):
+    os.chdir(constants.DRIVERROOTDIR)
+
+    # ubuntu dropped 64, fedora supports both
+    fileName = f"Azure.Functions.Cli.linux-x64.{constants.VERSION}.zip"
+    url = f'https://functionscdn.azureedge.net/public/{constants.VERSION}/{fileName}'
+
+    # download the zip
+    # output to local folder
+    import wget
+    if not os.path.exists(fileName):
+        print(f"downloading from {url}")
+        wget.download(url)
+
+    usr = os.path.join(buildFolder, "usr")
+    usrlib = os.path.join(usr, "lib")
+    usrlibFunc = os.path.join(usrlib, constants.PACKAGENAME)
+    os.makedirs(usrlibFunc)
+    # unzip here
+    import zipfile
+    with zipfile.ZipFile(fileName) as f:
+        print(f"extracting to {usrlibFunc}")
+        f.extractall(usrlibFunc)
+
+    # create relative symbolic link under bin directory, change mode to executable
+    usrbin = os.path.join(usr, "bin")
+    os.makedirs(usrbin)
+    # cd into usr/bin, create relative symlink
+    os.chdir(usrbin)
+    print("create symlink for func")
+    os.symlink(f"../lib/{constants.PACKAGENAME}/func", "func")
+    # executable to be returned
+    exeFullPath = os.path.abspath("func")
+
+    os.chdir(buildFolder)
+    # strip sharedobjects
+    import glob
+    sharedObjects = glob.glob("**/*.so", recursive=True)
+    printReturnOutput(["strip", "--strip-unneeded"] + sharedObjects)
+
+    chmodFolderAndFiles(os.path.join(buildFolder, "usr"))
+    print(f"change bin/func permission to 755")
+    # octal
+    os.chmod(exeFullPath, 0o755)
+
+def chmodFolderAndFiles(folder):
+    print(f"change permission of files in {folder}")
+    os.chmod(folder, 0o755)
+    for r, ds, fs in os.walk(folder):
+        for d in ds:
+            # folder permission to 755
+            os.chmod(os.path.join(r, d), 0o755)
+        for f in fs:
+            # file permission to 644
+            os.chmod(os.path.join(r, f), 0o644)
