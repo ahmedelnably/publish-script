@@ -85,6 +85,16 @@ def preparePackage():
         f.write(t.safe_substitute(DEBIANVERSION=debianVersion, PACKAGENAME=constants.PACKAGENAME, DEPENDENCY=deps))
     helper.chmodFolderAndFiles(debian)
 
+    postinst = ''
+    with open(os.path.join(scriptDir, "postinst_template")) as f:
+        postinst = f.read()
+    with open(os.path.join(debian, "postinst"), "w") as f:
+        print("trying to write postinst file")
+        f.write(postinst)
+
+    # postinstall has to be 0755 in order for it to work.
+    os.chmod(os.path.join(debian, "postinst"), 0o755)
+
     os.chdir(constants.DRIVERROOTDIR) 
     output = helper.printReturnOutput(["fakeroot", "dpkg-deb", "--build",
                    os.path.join(constants.BUILDFOLDER, packageFolder), os.path.join(constants.ARTIFACTFOLDER, packageFolder+".deb")])
