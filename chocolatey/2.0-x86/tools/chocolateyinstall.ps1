@@ -24,12 +24,21 @@ foreach ($file in $files) {
   }
 }
 
-# show telemetry information
-""
-"Telemetry"
-"---------"
-"The Azure Functions Core tools collect usage data in order to help us improve your experience."
-"The data is anonymous and doesn't include any user specific or personal information. The data is collected by Microsoft."
-""
-"You can opt-out of telemetry by setting the FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT environment variable to '1' or 'true' using your favorite shell."
-""
+
+try {
+  New-Item -type File -Path $toolsDir -Name "telemetryDefaultOn.sentinel" | Out-Null
+
+  # show telemetry information
+  ""
+  "Telemetry"
+  "---------"
+  "The Azure Functions Core tools collect usage data in order to help us improve your experience."
+  "The data is anonymous and doesn't include any user specific or personal information. The data is collected by Microsoft."
+  ""
+  "You can opt-out of telemetry by setting the FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT environment variable to '1' or 'true' using your favorite shell."
+  ""
+}
+catch
+{
+  # That's ok
+}

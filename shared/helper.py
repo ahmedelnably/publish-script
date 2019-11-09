@@ -103,8 +103,9 @@ def linuxOutput(buildFolder):
     os.chdir(buildFolder)
     # strip sharedobjects
     import glob
+    
     sharedObjects = glob.glob("**/*.so", recursive=True)
-
+    
     # obj files inside the workers should not be removed as workers like "python"
     # come with objects necessary for the worker to work.
     sharedObjects = [obj for obj in sharedObjects if "workers" not in obj]
