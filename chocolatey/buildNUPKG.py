@@ -4,6 +4,7 @@
 import os
 import wget
 import sys
+import platform
 from string import Template
 from shared import constants
 from shared.helper import printReturnOutput
@@ -28,13 +29,16 @@ def getChocoVersion(version):
 # output a deb nupkg
 # depends on chocolatey
 def preparePackage():
-    # for windows, its x86 version only
-    fileName = f"Azure.Functions.Cli.win-x86.{constants.VERSION}.zip"
+    # adding support for x64
+    osBit = platform.architecture()[0].replace('bit', '')
+    fileName = f"Azure.Functions.Cli.win-x{osBit}.{constants.VERSION}.zip"
     url = f'https://functionscdn.azureedge.net/public/{constants.VERSION}/{fileName}'
 
     # version used in url is provided from user input
     # version used for packaging nuget packages needs a slight modification
     chocoVersion = getChocoVersion(constants.VERSION)
+    
+
 
     # download the zip
     # output to local folder
